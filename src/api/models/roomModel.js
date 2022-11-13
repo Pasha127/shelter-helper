@@ -6,9 +6,9 @@ const roomDBSchema = new Schema(
       description: { type: String, required: true },
       location: { type: Number, required: true },
       maxGuests: { type: String, required: true },
-      hosts: {
-        type: Schema.Types.ObjectId, ref: "User" 
-        }
+      hosts: [
+        {type: Schema.Types.ObjectId, ref: "User" }
+      ]
     },
     {timestamps: true}
   )

@@ -7,7 +7,10 @@ const userDBSchema = new Schema(
         password: { type: String},
         role: { type: String, required: true, enum: ["host", "guest"], default: "guest"  },
         email: { type: String, required: true },
-        refreshToken: { type: String } 
+        refreshToken: { type: String },
+        rooms: [{
+          type: Schema.Types.ObjectId, ref: "User"  
+        }]
     },
     {timestamps: true}
   )
