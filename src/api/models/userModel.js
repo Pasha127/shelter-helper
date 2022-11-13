@@ -47,6 +47,8 @@ const userDBSchema = new Schema(
       return null;
     }
   })
+
+  userDBSchema.static("cleanModel", ()=>{})
   
 
 export default model("User", userDBSchema);

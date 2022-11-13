@@ -13,4 +13,4 @@ const roomDBSchema = new Schema(
     {timestamps: true}
   )
   
-  export default model("BlogPost",roomDBSchema)
+  export default model("Room",roomDBSchema)

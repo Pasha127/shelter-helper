@@ -11,6 +11,11 @@ const errorHandler = (err, req, res, next) => {
         console.log("401 in errorHandler", err.status);
         break;
   
+      case 403:
+        res.status(401).send({ message: err.message });
+        console.log("403 in errorHandler", err.status);
+        break;
+  
       case 404:
         res.status(404).send({ success: false, message: err.message });
         console.log("404 in errorHandler", err.status);

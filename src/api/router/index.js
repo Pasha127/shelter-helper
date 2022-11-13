@@ -6,6 +6,7 @@ import { createTokens, refreshTokens } from "../../lib/tools/tokenTools.js";
 import { checkUserSchema, checkValidationResult as checkUserValidationResult } from "../validators/uservalidator.js";
 import { checkRoomSchema, checkValidationResult as checkRoomValidationResult } from "../validators/roomValidator.js";
 import userModel from "../models/userModel.js";
+import roomModel from "../models/roomModel.js";
 
 const localEndpoint=`${process.env.LOCAL_URL}${process.env.PORT}`
 
@@ -14,16 +15,17 @@ const router = express.Router();
 
 ////////////////////////////  USERS  ////////////////////////////
 
-router.post("user/register", async (req, res, next) => {
+router.post("/user/register", async (req, res, next) => {
     try {
         console.log(req.headers.origin, "POST user at:", new Date());        
         const newUser = new userModel(req.body);
+        const {email, role, rooms} = newUser;
         const{_id}= await newUser.save();
         if (_id) {
             const { accessToken, refreshToken } = await createTokens(newUser);
             res.cookie("accessToken", accessToken);
             res.cookie("refreshToken", refreshToken);
-            res.status(201).send({...newUser, _id});
+            res.status(201).send({email, role, rooms, _id});
           } else {
             console.log("Error in returned registration");
             next(createHttpError(500, `Registration error`));
@@ -34,7 +36,7 @@ router.post("user/register", async (req, res, next) => {
     }   
   })
 
-router.put("user/login", async (req, res, next) => {
+router.put("/user/login", async (req, res, next) => {
     try {
       const { email, password } = req.body;
       const user = await userModel.checkCredentials(email, password);  
@@ -42,7 +44,7 @@ router.put("user/login", async (req, res, next) => {
         const { accessToken, refreshToken } = await createTokens(user);
         res.cookie("accessToken", accessToken);
         res.cookie("refreshToken", refreshToken);
-        res.status(200).send(user.toObject());
+        res.status(200).send(user);
 /*         res.redirect(`${process.env.FE_DEV_URL}/`) */
       } else {
         res.redirect(`${process.env.FE_DEV_URL}/`)
@@ -55,9 +57,9 @@ router.put("user/login", async (req, res, next) => {
   })
 
   
-router.post("user/refreshTokens", async (req, res, next) => {
+router.post("/user/refreshTokens", async (req, res, next) => {
     try {
-      const { currentRefreshToken } = req.body;
+      const  currentRefreshToken  = req.cookies.refreshToken;
       const { accessToken, refreshToken } = await refreshTokens(currentRefreshToken);
       res.cookie("accessToken", accessToken);
       res.cookie("refreshToken", refreshToken);
@@ -69,7 +71,7 @@ router.post("user/refreshTokens", async (req, res, next) => {
   })
 
 
-router.get("user/all", JWTAuth, async (req,res,next)=>{
+router.get("/user/all", JWTAuth, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -84,7 +86,7 @@ router.get("user/all", JWTAuth, async (req,res,next)=>{
 })
 
 
-router.put("user/logout", JWTAuth, async (req,res,next)=>{
+router.put("/user/logout", JWTAuth, async (req,res,next)=>{
     try{
         console.log(req.headers.origin, "GET user at:", new Date());
         /* console.log(req); */
@@ -103,7 +105,7 @@ router.put("user/logout", JWTAuth, async (req,res,next)=>{
 })
 
 
-router.get("user/me", JWTAuth, async (req,res,next)=>{
+router.get("/user/me", JWTAuth, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);;
     res.cookie("refreshToken", req.newTokens.newRefreshToken);;};;
@@ -112,7 +114,7 @@ router.get("user/me", JWTAuth, async (req,res,next)=>{
         /* console.log(req); */
         const user = await userModel.find({_id: req.user._id});
         if(user){console.log("found user", user);
-        res.status(200).send(user.toObject())}
+        res.status(200).send(user)}
         else{
           res.redirect(`${process.env.FE_DEV_URL}/`);;
           next(createHttpError(404, "User not found"));
@@ -123,7 +125,7 @@ router.get("user/me", JWTAuth, async (req,res,next)=>{
     }    
 })
 
-router.get("user/me/rooms", JWTAuth, hostOnly, async (req,res,next)=>{
+router.get("/user/me/rooms", JWTAuth, hostOnly, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -132,7 +134,7 @@ router.get("user/me/rooms", JWTAuth, hostOnly, async (req,res,next)=>{
         /* console.log(req); */
         const user = await userModel.find({_id: req.user._id});
         if(user){
-          const foundRooms = user.toObject().rooms;
+          const foundRooms = user.rooms;
         res.status(200).send(foundRooms)}
         else{
           res.redirect(`${process.env.FE_DEV_URL}/`);
@@ -144,7 +146,7 @@ router.get("user/me/rooms", JWTAuth, hostOnly, async (req,res,next)=>{
     }    
 })
 
-router.put("user/me", JWTAuth, async (req,res,next)=>{
+router.put("/user/me", JWTAuth, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -158,10 +160,10 @@ router.put("user/me", JWTAuth, async (req,res,next)=>{
     }
 })
 
-router.delete("user/me", JWTAuth, async (req,res,next)=>{try{
+router.delete("/user/me", JWTAuth, async (req,res,next)=>{try{
     console.log(req.headers.origin, "DELETE User at:", new Date());
     const deletedUser =  await userModel.findByIdAndDelete(req.user._id);      
-    if(deletedBlogPost){
+    if(deletedUser){
       res.status(204).send({message:"User has been deleted."});
     }else{
       next(createHttpError(404, "User Not Found"));    
@@ -174,7 +176,7 @@ router.delete("user/me", JWTAuth, async (req,res,next)=>{try{
 
 
 
-router.post("user/new", JWTAuth, checkUserSchema, checkUserValidationResult, async (req,res,next)=>{
+router.post("/user/new", JWTAuth, checkUserSchema, checkUserValidationResult, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -189,7 +191,7 @@ router.post("user/new", JWTAuth, checkUserSchema, checkUserValidationResult, asy
     }
   })
   
-  router.get("user/:userId", JWTAuth, async (req,res,next)=>{
+  router.get("/user/:userId", JWTAuth, async (req,res,next)=>{
     if(req.newTokens){
       res.cookie("accessToken", req.newTokens.newAccessToken);
       res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -208,7 +210,7 @@ router.post("user/new", JWTAuth, checkUserSchema, checkUserValidationResult, asy
   
   
 ////////////////////////////  ROOMS  ////////////////////////////
-router.get("room/all", JWTAuth, async (req,res,next)=>{
+router.get("/room/all", JWTAuth, async (req,res,next)=>{
     if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -235,7 +237,7 @@ router.get("room/all", JWTAuth, async (req,res,next)=>{
   }    
 })
 
-router.get("room/:roomId", JWTAuth, async (req,res,next)=>{
+router.get("/room/:roomId", JWTAuth, async (req,res,next)=>{
     if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -250,7 +252,7 @@ router.get("room/:roomId", JWTAuth, async (req,res,next)=>{
   }    
 })
 
-router.post("room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidationResult, async (req,res,next)=>{
+router.post("/room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidationResult, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -265,7 +267,7 @@ router.post("room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidationR
     }
   })
 
-  router.put("room/:roomId", JWTAuth, hostOnly, async (req,res,next)=>{
+  router.put("/room/:roomId", JWTAuth, hostOnly, async (req,res,next)=>{
     if(req.newTokens){
       res.cookie("accessToken", req.newTokens.newAccessToken);
       res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -283,7 +285,7 @@ router.post("room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidationR
       }
   })
   
-  router.delete("room/:roomId", JWTAuth, hostOnly, async (req,res,next)=>{
+  router.delete("/room/:roomId", JWTAuth, hostOnly, async (req,res,next)=>{
     if(req.newTokens){
       res.cookie("accessToken", req.newTokens.newAccessToken);
       res.cookie("refreshToken", req.newTokens.newRefreshToken);};

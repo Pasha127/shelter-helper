@@ -15,7 +15,7 @@ export const createTokens = async user => {
 
 const createAccessToken = payload =>
   new Promise(function (res, rej) {
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1m" }, (err, token) => {
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "5m" }, (err, token) => {
       if (err) rej(err);
       else res(token);
     })
@@ -32,7 +32,7 @@ export const verifyAccessToken = accessToken =>
 
 const createRefreshToken = payload =>
   new Promise((res, rej) => {
-    jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "1w" }, (err, token) => {
+    jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: "1d" }, (err, token) => {
       if (err) rej(err);
       else res(token);
     })
@@ -48,6 +48,7 @@ const verifyRefreshToken = refreshToken =>
   )
 
 export const refreshTokens = async currentRefreshToken => {
+  if(!currentRefreshToken){ throw new createHttpError(401, "Refresh token invalid!")}
   try {    
     const refreshTokenPayload = await verifyRefreshToken(currentRefreshToken);
     const user = await userModel.findById(refreshTokenPayload._id);
@@ -59,6 +60,6 @@ export const refreshTokens = async currentRefreshToken => {
       throw new createHttpError(401, "Refresh token invalid!")
     }
   } catch (error) {
-    throw new createHttpError(401, "Refresh token invalid!")
+    throw new createHttpError(401, "Refresh token invalid! 2")
   }
 }
