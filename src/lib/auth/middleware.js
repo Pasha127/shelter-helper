@@ -1,6 +1,6 @@
 import createHttpError from "http-errors"
-import { refreshTokens } from "../tools/tokenTools.js";
-import { verifyAccessToken } from "./tokenTools.js"
+import { refreshTokens, verifyAccessToken } from "../tools/tokenTools.js";
+
 
 
 export const hostOnly = (req, res, next) => {

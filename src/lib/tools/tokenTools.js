@@ -1,6 +1,6 @@
 import createHttpError from "http-errors"
 import jwt from "jsonwebtoken"
-import userModel from "../../api/models/userModel";
+import userModel from "../../api/models/userModel.js";
 
 
 export const createTokens = async user => {
