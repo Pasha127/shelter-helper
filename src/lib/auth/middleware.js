@@ -15,7 +15,6 @@ export const JWTAuth = async (req, res, next) => {
       next(createHttpError(401, "No access token in cookies."))
   } else {
     try {
-
       const accessToken = req.cookies.accessToken
       const payload = await verifyAccessToken(accessToken)
       req.user = {

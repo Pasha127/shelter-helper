@@ -6,8 +6,8 @@ const userDBSchema = new Schema(
     {      
         password: { type: String},
         role: { type: String, required: true, enum: ["Host", "Guest"], default: "Guest"  },
-        email: { type: String, required: true }
-        /* refreshToken: { type: String } */
+        email: { type: String, required: true },
+        refreshToken: { type: String } 
     },
     {timestamps: true}
   )
