@@ -5,7 +5,7 @@ import bcrypt from "bcrypt"
 const userDBSchema = new Schema(
     {      
         password: { type: String},
-        role: { type: String, required: true, enum: ["Host", "Guest"], default: "Guest"  },
+        role: { type: String, required: true, enum: ["host", "guest"], default: "guest"  },
         email: { type: String, required: true },
         refreshToken: { type: String } 
     },

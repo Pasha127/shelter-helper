@@ -25,7 +25,7 @@ const createAccessToken = payload =>
 export const verifyAccessToken = accessToken =>
   new Promise((res, rej) =>
     jwt.verify(accessToken, process.env.JWT_SECRET, (err, originalPayload) => {
-      if (err) rej(err);
+      if (err) res({result: "fail"});
       else res(originalPayload);
     })
   )
@@ -39,9 +39,9 @@ const createRefreshToken = payload =>
   }
   )
 
-const verifyRefreshToken = accessToken =>
+const verifyRefreshToken = refreshToken =>
   new Promise((res, rej) =>
-    jwt.verify(accessToken, process.env.REFRESH_SECRET, (err, originalPayload) => {
+    jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, originalPayload) => {
       if (err) rej(err);
       else res(originalPayload);
     })

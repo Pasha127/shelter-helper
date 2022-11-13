@@ -1,9 +1,5 @@
 import express from "express";
-import multer from "multer"; 
-import passport from "passport";
 import createHttpError from "http-errors";
-import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { hostOnly, JWTAuth } from "../../lib/auth/middleware.js";
 import { createTokens, refreshTokens } from "../../lib/tools/tokenTools.js";
 import { checkUserSchema, checkValidationResult as checkUserValidationResult } from "../validators/uservalidator.js";
@@ -11,47 +7,10 @@ import { checkRoomSchema, checkValidationResult as checkRoomValidationResult } f
 import userModel from "../models/userModel.js";
 
 
-const cloudinaryUploader = multer({
-  storage: new CloudinaryStorage({
-    cloudinary, 
-    params: {folder: "BlogPics"},
-  }),
-  limits: { fileSize: 1024 * 1024 },
-}).single("image")
-
-const blogPostRouter = express.Router();
-
 const router = express.Router();
 
-/* router.get("/googleLogin", passport.authenticate("google",{scope:["email","profile"]})) */
 
-/* router.get("/googleRedirect", passport.authenticate("google",{session: false}), async (req, res, next) => {
-
-  try {
-    const {accessToken,refreshToken} = req.user
-    res.cookie("accessToken",accessToken,{"httpOnly":true});
-    res.cookie("refreshToken",refreshToken,{"httpOnly":true});
-    res.redirect(`${process.env.FE_DEV_URL}/`/* ?loginSuccessful=true *//* );
-  }catch(error){
-    console.log(error)
-      next(error);
-  }   
-}) */
-
-/* router.get("/facebookLogin", passport.authenticate('facebook')) */
-
-/* router.get("/facebookRedirect", passport.authenticate('facebook',{failureRedirect: `${process.env.FE_DEV_URL}/`,session: false}), async (req, res, next) => {
-console.log("redirectedFB")
-  try {
-    const {accessToken,refreshToken} = req.user
-    res.cookie("accessToken",accessToken,{"httpOnly":true});
-    res.cookie("refreshToken",refreshToken,{"httpOnly":true});
-    res.redirect(`${process.env.FE_DEV_URL}/`/* ?loginSuccessful=true *//* );
-  }catch(error){
-    console.log(error)
-      next(error);
-  }   
-}) */
+////////////////////////////  USERS  ////////////////////////////
 
 router.post("user/register", async (req, res, next) => {
     try {
@@ -73,7 +32,7 @@ router.post("user/register", async (req, res, next) => {
     }   
   })
 
-router.post("/login", async (req, res, next) => {
+router.put("user/login", async (req, res, next) => {
     try {
       const { email, password } = req.body
       const user = await userModel.checkCredentials(email, password);  
@@ -81,7 +40,7 @@ router.post("/login", async (req, res, next) => {
         const { accessToken, refreshToken } = await createTokens(user);
         res.cookie("accessToken", accessToken)
         res.cookie("refreshToken", refreshToken)
-        res.status(200).send({...user.toObject()})
+        res.status(200).send(user.toObject())
 /*         res.redirect(`${process.env.FE_DEV_URL}/`) */
       } else {
         res.redirect(`${process.env.FE_DEV_URL}/`)
@@ -93,9 +52,8 @@ router.post("/login", async (req, res, next) => {
     }
   })
 
-///////////////
   
-router.post("/refreshTokens", async (req, res, next) => {
+router.post("user/refreshTokens", async (req, res, next) => {
     try {
       const { currentRefreshToken } = req.body   
       const { accessToken, refreshToken } = await refreshTokens(currentRefreshToken)
@@ -106,39 +64,26 @@ router.post("/refreshTokens", async (req, res, next) => {
       next(error)
     }
   })
-  
 
 
-router.get("/", JWTAuth, async (req,res,next)=>{
+router.get("user/all", JWTAuth, async (req,res,next)=>{
+  if(req.newTokens){
+    res.cookie("accessToken", req.newTokens.newAccessToken)
+    res.cookie("refreshToken", req.newTokens.newRefreshToken)}
     try{
-        console.log(req.headers.origin, "GET user at:", new Date());
+        console.log(req.headers.origin, "GET all users at:", new Date());
         const users = await userModel.find()
-        res.status(200).send(users)        
+          res.status(200).send(users) 
     }catch(error){ 
         next(error)
     }    
 })
 
-router.get("/me", JWTAuth, async (req,res,next)=>{
+
+router.put("user/logout", JWTAuth, async (req,res,next)=>{
     try{
         console.log(req.headers.origin, "GET user at:", new Date());
-        console.log(req);
-        const user = await userModel.find({_id: req.user._id});
-        if(user){console.log("found user", user)
-        res.status(200).send(user)}
-        else{
-          res.redirect(`${process.env.FE_DEV_URL}/`)
-          next(createHttpError(404, "User not found"));
-        }        
-    }catch(error){ 
-      console.log("error me")
-        next(error)
-    }    
-})
-router.get("/logout", JWTAuth, async (req,res,next)=>{
-    try{
-        console.log(req.headers.origin, "GET user at:", new Date());
-        console.log(req);
+        /* console.log(req); */
         const user = await userModel.find({_id: req.user._id});
         if(user){console.log("found user", user)
         res.clearCookie('refreshToken');
@@ -153,49 +98,34 @@ router.get("/logout", JWTAuth, async (req,res,next)=>{
     }    
 })
 
-router.get("/:userId", JWTAuth, adminOnly, async (req,res,next)=>{
+
+router.get("user/me", JWTAuth, async (req,res,next)=>{
+  if(req.newTokens){
+    res.cookie("accessToken", req.newTokens.newAccessToken)
+    res.cookie("refreshToken", req.newTokens.newRefreshToken)}
     try{
-        console.log(req.headers.origin, "GET user at:", new Date());       
-        const foundUser = await userModel.findById(req.params.user)
-        if(foundUser){
-            res.status(200).send(foundUser);
-        }else{next(createHttpError(404, "user Not Found"));
-    } 
-    }catch(error){
-        next(error);
-    }
+        console.log(req.headers.origin, "GET me at:", new Date());
+        /* console.log(req); */
+        const user = await userModel.find({_id: req.user._id});
+        if(user){console.log("found user", user);
+        res.status(200).send(user.toObject())}
+        else{
+          res.redirect(`${process.env.FE_DEV_URL}/`)
+          next(createHttpError(404, "User not found"));
+        }        
+    }catch(error){ 
+      console.log("error me")
+        next(error)
+    }    
 })
 
-
-router.post("/", JWTAuth, checkUserSchema, checkValidationResult, adminOnly, async (req,res,next)=>{
+router.put("user/me", JWTAuth, async (req,res,next)=>{
+  if(req.newTokens){
+    res.cookie("accessToken", req.newTokens.newAccessToken)
+    res.cookie("refreshToken", req.newTokens.newRefreshToken)}
     try{
-        console.log(req.headers.origin, "POST user at:", new Date());
-        const newUser = new userModel(req.body);
-        const{_id}= await newUser.save();
-
-        res.status(201).send({message:`Added a new user.`,_id});
-        
-    }catch(error){
-        next(error);
-    }
-})
-
-
-
-router.post("/images/:userId/avatar", cloudinaryUploader, async (req,res,next)=>{try{
-     console.log("tried to post an avatar", req.file.path);
-     await userModel.findByIdAndUpdate(req.params.userId, {user: {avatar: req.file.path}}, {new:true, runValidators:true});   
-        
-    res.status(201).send({message: "Avatar Uploaded"});
- }catch(error){console.log(error)}}); 
-
-
-
-
-router.put("/:userId", JWTAuth, adminOnly, async (req,res,next)=>{
-    try{
-        console.log(req.headers.origin, "PUT post at:", new Date());
-        await userModel.findByIdAndUpdate(req.params.userId, {user:
+        console.log(req.headers.origin, "PUT User at:", new Date());
+        await userModel.findByIdAndUpdate(req.user._id, {user:
            {...req.body}}, {new:true, runValidators:true});   
      
         res.status(200).send(updatedUser);
@@ -205,20 +135,55 @@ router.put("/:userId", JWTAuth, adminOnly, async (req,res,next)=>{
     }
 })
 
-
-router.delete("/:userId", JWTAuth, adminOnly, async (req,res,next)=>{try{
-    console.log(req.headers.origin, "DELETE post at:", new Date());
-    const deletedUser =  await userModel.findByIdAndDelete(req.params.userId)      
+router.delete("user/me", JWTAuth, async (req,res,next)=>{try{
+    console.log(req.headers.origin, "DELETE User at:", new Date());
+    const deletedUser =  await userModel.findByIdAndDelete(req.user._id)      
     if(deletedBlogPost){
-      res.status(204).send({message:"blogPost has been deleted."})
+      res.status(204).send({message:"User has been deleted."})
     }else{
-      next(createHttpError(404, "Blogpost Not Found"));    
+      next(createHttpError(404, "User Not Found"));    
     }
 }catch(error){
     next(error)
 }
 })
 
+
+
+router.post("user/new", JWTAuth, checkUserSchema, checkUserValidationResult, async (req,res,next)=>{
+  if(req.newTokens){
+    res.cookie("accessToken", req.newTokens.newAccessToken)
+    res.cookie("refreshToken", req.newTokens.newRefreshToken)}
+    try{
+      console.log(req.headers.origin, "POST user at:", new Date());
+      const newUser = new userModel(req.body);
+      const{_id}= await newUser.save();
+      
+      res.status(201).send({message:`Added a new user.`,_id});
+      
+    }catch(error){
+      next(error);
+    }
+  })
+  
+  router.get("user/:userId", JWTAuth, async (req,res,next)=>{
+    if(req.newTokens){
+      res.cookie("accessToken", req.newTokens.newAccessToken)
+      res.cookie("refreshToken", req.newTokens.newRefreshToken)}
+      try{
+          console.log(req.headers.origin, "GET user at:", new Date());       
+          const foundUser = await userModel.findById(req.params.userId)
+          if(foundUser){
+              res.status(200).send(foundUser);
+          }else{next(createHttpError(404, "user Not Found"));
+      } 
+      }catch(error){
+          next(error);
+      }
+  })
+  
+  
+////////////////////////////  ROOMS  ////////////////////////////
 
 
 
