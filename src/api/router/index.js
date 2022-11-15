@@ -94,8 +94,9 @@ router.put("/user/logout", JWTAuth, async (req,res,next)=>{
         if(user){console.log("found user", user)
         res.clearCookie('refreshToken');
         res.clearCookie('accessToken');
-        res.redirect(`${process.env.FE_DEV_URL}/`)}
-        else{
+       /*  res.redirect(`${process.env.FE_DEV_URL}/`) */
+       res.send(200)
+    }else{
           next(createHttpError(404, "User not found"));
         }        
     }catch(error){ 
@@ -257,8 +258,9 @@ router.post("/room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidation
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
     try{
+      const {name, location, maxGuests, description} = req.body
       console.log(req.headers.origin, "POST room at:", new Date());
-      const newRoom = new roomModel({...req.body, hosts:[...req.body.hosts, req.user._id]});
+      const newRoom = new roomModel({name, location, maxGuests, description, hosts:[req.body.hosts, req.user._id]});
       const{_id}= await newRoom.save();      
       res.status(201).send({message:`Added a new room.`,_id});
     }catch(error){
