@@ -1,15 +1,14 @@
 import express from "express";
 import q2m from "query-to-mongo";
 import createHttpError from "http-errors";
-import { hostOnly, JWTAuth } from "../../lib/auth/middleware.js";
-import { createTokens, refreshTokens } from "../../lib/tools/tokenTools.js";
-import { checkUserSchema, checkValidationResult as checkUserValidationResult } from "../validators/uservalidator.js";
-import { checkRoomSchema, checkValidationResult as checkRoomValidationResult } from "../validators/roomValidator.js";
-import userModel from "../models/userModel.js";
-import roomModel from "../models/roomModel.js";
-
+import { hostOnly, JWTAuth } from "../../lib/auth/middleware";
+import { createTokens, refreshTokens } from "../../lib/tools/tokenTools";
+import { checkUserSchema, checkValidationResult as checkUserValidationResult } from "../validators/userValidator";
+import { checkRoomSchema, checkValidationResult as checkRoomValidationResult } from "../validators/roomValidator";
+import roomModel from "../models/roomModel";
+import userModel from "../models/userModel";
+import { TokenizedRequest } from "../../lib/tools/types";
 const localEndpoint=`${process.env.LOCAL_URL}${process.env.PORT}`
-
 const router = express.Router();
 
 
@@ -90,7 +89,7 @@ router.put("/user/logout", JWTAuth, async (req,res,next)=>{
     try{
         console.log(req.headers.origin, "GET user at:", new Date());
         /* console.log(req); */
-        const user = await userModel.find({_id: req.user._id});
+        const user = await userModel.find({_id: req.user!._id});
         if(user){console.log("found user", user)
         res.clearCookie('refreshToken');
         res.clearCookie('accessToken');
@@ -108,12 +107,12 @@ router.put("/user/logout", JWTAuth, async (req,res,next)=>{
 
 router.get("/user/me", JWTAuth, async (req,res,next)=>{
   if(req.newTokens){
-    res.cookie("accessToken", req.newTokens.newAccessToken);;
-    res.cookie("refreshToken", req.newTokens.newRefreshToken);;};;
+    res.cookie("accessToken", req.newTokens.newAccessToken)
+    res.cookie("refreshToken", req.newTokens.newRefreshToken)}
     try{
         console.log(req.headers.origin, "GET me at:", new Date());
         /* console.log(req); */
-        const user = await userModel.find({_id: req.user._id});
+        const user = await userModel.find({_id: req.user!._id});
         if(user){console.log("found user", user);
         res.status(200).send(user)}
         else{
@@ -133,7 +132,7 @@ router.get("/user/me/rooms", JWTAuth, hostOnly, async (req,res,next)=>{
     try{
         console.log(req.headers.origin, "GET me at:", new Date());
         /* console.log(req); */
-        const user = await userModel.find({_id: req.user._id});
+        const user = await userModel.find({_id: req.user!._id});
         if(user){
           const foundRooms = user.rooms;
         res.status(200).send(foundRooms)}
@@ -153,7 +152,7 @@ router.put("/user/me", JWTAuth, async (req,res,next)=>{
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
     try{
         console.log(req.headers.origin, "PUT User at:", new Date());
-        const updatedUser = await userModel.findByIdAndUpdate(req.user._id, {...req.body}, {new:true, runValidators:true});        
+        const updatedUser = await userModel.findByIdAndUpdate(req.user!._id, {...req.body}, {new:true, runValidators:true});        
         res.status(200).send(updatedUser);        
     }catch(error){ 
       console.log("Put me", error);
@@ -163,7 +162,7 @@ router.put("/user/me", JWTAuth, async (req,res,next)=>{
 
 router.delete("/user/me", JWTAuth, async (req,res,next)=>{try{
     console.log(req.headers.origin, "DELETE User at:", new Date());
-    const deletedUser =  await userModel.findByIdAndDelete(req.user._id);      
+    const deletedUser =  await userModel.findByIdAndDelete(req.user!._id);      
     if(deletedUser){
       res.status(204).send({message:"User has been deleted."});
     }else{
@@ -177,7 +176,7 @@ router.delete("/user/me", JWTAuth, async (req,res,next)=>{try{
 
 
 
-router.post("/user/new", JWTAuth, checkUserSchema, checkUserValidationResult, async (req,res,next)=>{
+router.post("/user/new", JWTAuth,  checkUserValidationResult, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
@@ -253,14 +252,14 @@ router.get("/room/:roomId", JWTAuth, async (req,res,next)=>{
   }    
 })
 
-router.post("/room/new", JWTAuth, hostOnly, checkRoomSchema, checkRoomValidationResult, async (req,res,next)=>{
+router.post("/room/new", JWTAuth, hostOnly,  checkRoomValidationResult, async (req,res,next)=>{
   if(req.newTokens){
     res.cookie("accessToken", req.newTokens.newAccessToken);
     res.cookie("refreshToken", req.newTokens.newRefreshToken);};
     try{
       const {name, location, maxGuests, description} = req.body
       console.log(req.headers.origin, "POST room at:", new Date());
-      const newRoom = new roomModel({name, location, maxGuests, description, hosts:[req.body.hosts, req.user._id]});
+      const newRoom = new roomModel({name, location, maxGuests, description, hosts:[req.body.hosts, req.user!._id]});
       const{_id}= await newRoom.save();      
       res.status(201).send({message:`Added a new room.`,_id});
     }catch(error){

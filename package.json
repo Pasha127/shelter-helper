@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "shelter booking",
   "main": "index.js",
-  "type":"module",
   "scripts": {
     "test": "jest --watchAll",
     "dev": "nodemon -r dotenv/config ./src/index.ts",
@@ -44,6 +43,9 @@
   },
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
+    "@types/cookie-parser": "^1.4.3",
+    "@types/cors": "^2.8.12",
+    "@types/passport": "^1.0.11",
     "atob": "^2.1.2",
     "bcrypt": "^5.1.0",
     "cloudinary": "^1.32.0",

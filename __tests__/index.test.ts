@@ -1,9 +1,9 @@
 import supertest from "supertest";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import server from "../src/server.js";
-import roomModel from "../src/api/models/roomModel.js";
-import userModel from "../src/api/models/userModel.js";
+import { server } from "../src/server";
+import roomModel from "../src/api/models/roomModel";
+import userModel from "../src/api/models/userModel";
 dotenv.config();
 const client = supertest(server);
 
@@ -17,6 +17,13 @@ const newHost = {
   email: "test@host.new"
 };
 
+const newRoom = {
+  name:"Villa de Example",
+  description: "Modern",
+  location: "New Example",
+  maxGuests: 2
+};
+
 const invalidGuest = {
   email: "test@guest.new"
 };
@@ -26,11 +33,14 @@ const invalidHost = {
 
 
 beforeAll(async () => {
+  if(process.env.MONGO_TEST_CONNECTION_URL){
   await mongoose.connect(process.env.MONGO_TEST_CONNECTION_URL);
   const host = new userModel(newHost);
   const guest = new userModel(newGuest);
+  const room = new roomModel(newRoom);
   await host.save();
-  await guest.save();
+  await guest.save();}
+  else{throw new Error("No Mongo URL")}
 });
 
 
@@ -52,7 +62,8 @@ describe("Test Products APIs", () => {
 })
 
 afterAll(async () => {
-  await productModel.deleteMany();
+  await roomModel.deleteMany();
+  await userModel.deleteMany();
   await mongoose.connection.close();
 });
 

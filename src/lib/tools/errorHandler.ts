@@ -1,4 +1,6 @@
-const errorHandler = (err, req, res, next) => {
+import {ErrorRequestHandler} from "express"
+
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     /* console.log("error check",err) */
     switch (err.status){
       case 400:

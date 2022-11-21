@@ -1,7 +1,8 @@
-import { checkSchema, validationResult } from "express-validator"
-import createHttpError from "http-errors"
+import { checkSchema, Schema, validationResult } from "express-validator";
+import createHttpError from "http-errors";
+import {RequestHandler} from "express";
 
-const userSchema = {
+const userSchema: Schema = {
   email: {
     in: ["body"],
     isString: {
@@ -25,7 +26,7 @@ const userSchema = {
 
 
 export const checkUserSchema = checkSchema(userSchema) 
-export const checkValidationResult = (req, res, next) => { 
+export const checkValidationResult:RequestHandler = (req, res, next) => { 
   const errors = validationResult(req)
   if (!errors.isEmpty()) {   
     next(

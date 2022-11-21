@@ -1,6 +1,7 @@
 import {Schema, model} from "mongoose";
-import bcrypt from "bcrypt"
-
+import bcrypt from "bcrypt";
+import createHttpError from "http-errors";
+import {UserDocument, userModel} from "../../lib/tools/types" 
 
 const userDBSchema = new Schema(
     {      
@@ -17,9 +18,13 @@ const userDBSchema = new Schema(
   
   
   userDBSchema.pre("save", async function (next) {
-    if (this.isModified("password")) {  
-      const hash = await bcrypt.hash(this.password, 11);
-      this.password = hash;
+    if (this.isModified("password")) {
+      if(this.password){
+        const hash = await bcrypt.hash(this.password, 11);
+        this.password = hash;
+      }else{
+        next(createHttpError(400, "Validation errors in user request body!", ))
+      }
     }    
     next();
   })
@@ -51,4 +56,4 @@ const userDBSchema = new Schema(
   userDBSchema.static("cleanModel", ()=>{})
   
 
-export default model("User", userDBSchema);
+export default model<UserDocument, userModel>("User", userDBSchema);
